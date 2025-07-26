@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Targumchik",
+  "version": "1.0.0",
+  "description": "Translate selected English words or phrases into Hebrew using the Morfix dictionary",
+  "permissions": [
+    "scripting",
+    "activeTab",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://www.morfix.co.il/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+} 
