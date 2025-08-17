@@ -5,6 +5,7 @@
   let currentPopup = null;
   let autoCloseTimer = null;
   let isTranslating = false;
+  let isHoveringOverPopup = false;
 
   // Listen for keyboard shortcut: Cmd+Option+Ctrl
   document.addEventListener('keydown', function(event) {
@@ -605,6 +606,21 @@
         console.log('Close button not found');
       }
       
+      // Pause auto-close while hovering the popup
+      const handleMouseEnter = () => {
+        isHoveringOverPopup = true;
+        if (autoCloseTimer) {
+          clearTimeout(autoCloseTimer);
+          autoCloseTimer = null;
+        }
+      };
+      const handleMouseLeave = () => {
+        isHoveringOverPopup = false;
+        startAutoCloseTimer();
+      };
+      popup.addEventListener('mouseenter', handleMouseEnter);
+      popup.addEventListener('mouseleave', handleMouseLeave);
+
       // Add speaker button functionality
       const speakerButtons = popup.querySelectorAll('.targumchik-speaker');
       speakerButtons.forEach((button) => {
@@ -619,6 +635,8 @@
       
       // Close on escape key
       document.addEventListener('keydown', handleEscapeKey);
+      document.addEventListener('mousedown', handleOutsidePointerEvent, true);
+      document.addEventListener('touchstart', handleOutsidePointerEvent, true);
       console.log('Popup should now be visible on page');
     } catch (error) {
       console.error('Error in addPopupToPage:', error);
@@ -630,6 +648,18 @@
     if (event.key === 'Escape' && currentPopup) {
       removeCurrentPopup();
     }
+  }
+
+  // Close when clicking/touching outside the popup
+  function handleOutsidePointerEvent(event) {
+    if (!currentPopup) {
+      return;
+    }
+    const target = event.target;
+    if (currentPopup.contains(target)) {
+      return; // Click inside popup - ignore
+    }
+    removeCurrentPopup();
   }
 
   // Remove current popup
@@ -645,6 +675,9 @@
     }
     
     document.removeEventListener('keydown', handleEscapeKey);
+    document.removeEventListener('mousedown', handleOutsidePointerEvent, true);
+    document.removeEventListener('touchstart', handleOutsidePointerEvent, true);
+    isHoveringOverPopup = false;
   }
 
   // Start auto-close timer
@@ -652,9 +685,15 @@
     if (autoCloseTimer) {
       clearTimeout(autoCloseTimer);
     }
-    
+    // Do not schedule auto-close while hovered
+    if (isHoveringOverPopup || !currentPopup) {
+      return;
+    }
     autoCloseTimer = setTimeout(() => {
-      removeCurrentPopup();
+      if (!isHoveringOverPopup) {
+        removeCurrentPopup();
+      }
+      // If hovered at the moment of firing, do nothing.
     }, 15000); // 15 seconds
   }
 
