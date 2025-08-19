@@ -255,10 +255,14 @@
     }
 
     const encodedText = encodeURIComponent(originalText);
+    const morfixLogoUrl = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
+      ? chrome.runtime.getURL('morfix_logo.svg')
+      : 'morfix_logo.svg';
     content += `
         <div class="targumchik-footer">
-          <a href="https://www.morfix.co.il/${encodedText}" target="_blank">
-            🔗 View full translation on Morfix
+          <a href="https://www.morfix.co.il/${encodedText}" target="_blank" class="targumchik-morfix-link" rel="noopener noreferrer">
+            <img src="${morfixLogoUrl}" alt="Morfix" class="targumchik-morfix-logo" />
+            <span>View full translation on Morfix</span>
           </a>
         </div>
       </div>
@@ -488,10 +492,20 @@
           color: #4a90e2 !important;
           text-decoration: none !important;
           font-size: 13px !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 10px !important;
         }
         
         .targumchik-footer a:hover {
           text-decoration: underline !important;
+        }
+
+        .targumchik-morfix-logo {
+          width: auto !important;
+          height: 26px !important;
+          display: inline-block !important;
+          vertical-align: middle !important;
         }
         
         .targumchik-no-results,
