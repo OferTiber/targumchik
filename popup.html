@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Targumchik</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 0;
+        padding: 0;
+        width: 320px;
+        max-width: 320px;
+        color: #222;
+        background: #fff;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px 14px 10px;
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0;
+        color: #1f5fbf;
+      }
+      p { margin: 0; line-height: 1.5; }
+      ul { margin: 0 1rem 0 0; padding: 0 1rem 0 0; }
+      li { margin: 6px 0; }
+      .kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        padding: 2px 6px;
+        display: inline-block;
+      }
+      .footer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-top: 1px solid #eee;
+        background: #fafafa;
+      }
+      .footer a {
+        color: #1f5fbf;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .footer a:hover { text-decoration: underline; }
+      .logo {
+        height: 16px;
+        width: auto;
+        position: relative;
+        top: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>תרגומצ'יק</h1>
+      <p>תרגום מהיר למילים וביטויים מאנגלית לעברית בעזרת מורפיקס.</p>
+
+      <h2 style="font-size:14px; margin:10px 0 4px; color:#374151;">איך משתמשים?</h2>
+      <ul>
+        <li>בחרו טקסט בעמוד ואז פתחו את התפריט עם כפתור ימני ובחרו <b>Targumchik</b>.</li>
+        <li>או השתמשו בקיצור מקלדת: <span class="kbd">⌘ Cmd</span> + <span class="kbd">⌥ Option</span> + <span class="kbd">⌃ Control</span>.</li>
+        <li>בחלונית התוצאה ניתן לשמוע הגייה של המילה ולפתוח את הערך המלא במורפיקס.</li>
+      </ul>
+
+      <h2 style="font-size:14px; margin:12px 0 4px; color:#374151;">טיפים</h2>
+      <ul>
+        <li>ניתן לגרור את החלונית בעזרת הכותרת שלה.</li>
+        <li>החלונית נסגרת אוטומטית לאחר כמה שניות ללא שימוש.</li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      <a href="https://www.morfix.co.il" target="_blank" rel="noopener noreferrer">
+        <span>קרדיט ל־מורפיקס</span>
+        <img class="logo" src="morfix_logo.svg" alt="Morfix" />
+      </a>
+    </div>
+  </body>
+  </html>
+
+

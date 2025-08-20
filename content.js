@@ -6,6 +6,7 @@
   let autoCloseTimer = null;
   let isTranslating = false;
   let isHoveringOverPopup = false;
+  let dragCleanupFns = [];
 
   // Listen for keyboard shortcut: Cmd+Option+Ctrl
   document.addEventListener('keydown', function(event) {
@@ -259,12 +260,12 @@
       ? chrome.runtime.getURL('morfix_logo.svg')
       : 'morfix_logo.svg';
     content += `
-        <div class="targumchik-footer">
-          <a href="https://www.morfix.co.il/${encodedText}" target="_blank" class="targumchik-morfix-link" rel="noopener noreferrer">
-            <img src="${morfixLogoUrl}" alt="Morfix" class="targumchik-morfix-logo" />
-            <span>View full translation on Morfix</span>
-          </a>
-        </div>
+      </div>
+      <div class="targumchik-footer">
+        <a href="https://www.morfix.co.il/${encodedText}" target="_blank" class="targumchik-morfix-link" rel="noopener noreferrer">
+          <span>תרגום מלא ב-</span>
+          <img src="${morfixLogoUrl}" alt="Morfix" class="targumchik-morfix-logo" />
+        </a>
       </div>
     `;
 
@@ -325,7 +326,8 @@
           font-family: Arial, sans-serif !important;
           font-size: 14px !important;
           overflow: hidden !important;
-          display: block !important;
+          display: flex !important;
+          flex-direction: column !important;
           visibility: visible !important;
           opacity: 1 !important;
           pointer-events: auto !important;
@@ -342,6 +344,10 @@
           align-items: center !important;
           font-weight: bold !important;
           margin: 0 !important;
+          cursor: move !important;
+          -webkit-user-select: none !important;
+          user-select: none !important;
+          flex-shrink: 0 !important;
         }
         
         .targumchik-close {
@@ -365,7 +371,8 @@
         
         .targumchik-content {
           padding: 15px !important;
-          max-height: 300px !important;
+          flex: 1 1 auto !important;
+          min-height: 0 !important;
           overflow-y: auto !important;
         }
         
@@ -482,28 +489,34 @@
         }
         
         .targumchik-footer {
-          margin-top: 15px !important;
-          padding-top: 15px !important;
+          background: #fff !important;
+          padding: 10px 15px !important;
           border-top: 1px solid #eee !important;
           text-align: center !important;
+          flex-shrink: 0 !important;
         }
         
         .targumchik-footer a {
+          direction: rtl !important;
           color: #4a90e2 !important;
           text-decoration: none !important;
           font-size: 13px !important;
           display: inline-flex !important;
           align-items: center !important;
           gap: 10px !important;
+          transition: background-color 0.2s ease !important;
         }
         
         .targumchik-footer a:hover {
           text-decoration: underline !important;
+          background-color:rgb(223, 235, 250) !important;
         }
 
         .targumchik-morfix-logo {
+        position:relative;
+        top:2px;
           width: auto !important;
-          height: 26px !important;
+          height: 16px !important;
           display: inline-block !important;
           vertical-align: middle !important;
         }
@@ -568,12 +581,15 @@
         right: 20px !important;
         z-index: 2147483647 !important;
         width: 350px !important;
+        max-height: 80vh !important;
         background: white !important;
         border: 1px solid #ddd !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
-        display: block !important;
+        display: flex !important;
+        flex-direction: column !important;
         visibility: visible !important;
         pointer-events: auto !important;
+        overflow: hidden !important;
       `;
       
       console.log('About to append popup to container');
@@ -652,6 +668,107 @@
       document.addEventListener('mousedown', handleOutsidePointerEvent, true);
       document.addEventListener('touchstart', handleOutsidePointerEvent, true);
       console.log('Popup should now be visible on page');
+
+      // Enable dragging by header
+      try {
+        const header = popup.querySelector('.targumchik-header');
+        if (header) {
+          let isDragging = false;
+          let dragStartX = 0;
+          let dragStartY = 0;
+          let startTop = 0;
+          let startLeft = 0;
+
+          const getNumber = (value) => parseFloat(String(value).replace('px', '')) || 0;
+
+          const beginDrag = (pageX, pageY) => {
+            const rect = popup.getBoundingClientRect();
+            // Ensure popup uses left instead of right while dragging for consistent math
+            const computed = window.getComputedStyle(popup);
+            const topVal = computed.top;
+            const leftVal = computed.left;
+            const rightVal = computed.right;
+            let left = getNumber(leftVal);
+            if (!left && rightVal && rightVal !== 'auto') {
+              // Convert right to left
+              left = Math.max(0, window.innerWidth - rect.width - getNumber(rightVal));
+            }
+            popup.style.setProperty('left', left + 'px', 'important');
+            popup.style.setProperty('right', 'auto', 'important');
+            popup.style.setProperty('top', getNumber(topVal || rect.top) + 'px', 'important');
+
+            isDragging = true;
+            dragStartX = pageX;
+            dragStartY = pageY;
+            startTop = getNumber(popup.style.top);
+            startLeft = getNumber(popup.style.left);
+            // Prevent text selection while dragging
+            document.body.style.userSelect = 'none';
+          };
+
+          const onPointerMove = (pageX, pageY) => {
+            if (!isDragging) return;
+            const deltaX = pageX - dragStartX;
+            const deltaY = pageY - dragStartY;
+            let nextLeft = startLeft + deltaX;
+            let nextTop = startTop + deltaY;
+            // Clamp to viewport
+            const rect = popup.getBoundingClientRect();
+            const maxLeft = Math.max(0, window.innerWidth - rect.width);
+            const maxTop = Math.max(0, window.innerHeight - rect.height);
+            nextLeft = Math.min(Math.max(0, nextLeft), maxLeft);
+            nextTop = Math.min(Math.max(0, nextTop), maxTop);
+            popup.style.setProperty('left', nextLeft + 'px', 'important');
+            popup.style.setProperty('top', nextTop + 'px', 'important');
+          };
+
+          const endDrag = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            document.body.style.userSelect = '';
+          };
+
+          // Mouse events
+          const onMouseDown = (e) => {
+            if (e.button !== 0) return; // left button only
+            e.preventDefault();
+            beginDrag(e.pageX, e.pageY);
+          };
+          const onMouseMove = (e) => onPointerMove(e.pageX, e.pageY);
+          const onMouseUp = endDrag;
+          header.addEventListener('mousedown', onMouseDown);
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onMouseUp);
+          dragCleanupFns.push(() => header.removeEventListener('mousedown', onMouseDown));
+          dragCleanupFns.push(() => window.removeEventListener('mousemove', onMouseMove));
+          dragCleanupFns.push(() => window.removeEventListener('mouseup', onMouseUp));
+
+          // Touch events
+          const onTouchStart = (e) => {
+            const t = e.touches[0];
+            if (!t) return;
+            e.preventDefault();
+            beginDrag(t.pageX, t.pageY);
+          };
+          const onTouchMove = (e) => {
+            const t = e.touches[0];
+            if (!t) return;
+            onPointerMove(t.pageX, t.pageY);
+          };
+          const onTouchEnd = endDrag;
+          const onTouchCancel = endDrag;
+          header.addEventListener('touchstart', onTouchStart, { passive: false });
+          window.addEventListener('touchmove', onTouchMove, { passive: false });
+          window.addEventListener('touchend', onTouchEnd);
+          window.addEventListener('touchcancel', onTouchCancel);
+          dragCleanupFns.push(() => header.removeEventListener('touchstart', onTouchStart));
+          dragCleanupFns.push(() => window.removeEventListener('touchmove', onTouchMove));
+          dragCleanupFns.push(() => window.removeEventListener('touchend', onTouchEnd));
+          dragCleanupFns.push(() => window.removeEventListener('touchcancel', onTouchCancel));
+        }
+      } catch (dragErr) {
+        console.error('Error enabling drag:', dragErr);
+      }
     } catch (error) {
       console.error('Error in addPopupToPage:', error);
     }
@@ -692,6 +809,16 @@
     document.removeEventListener('mousedown', handleOutsidePointerEvent, true);
     document.removeEventListener('touchstart', handleOutsidePointerEvent, true);
     isHoveringOverPopup = false;
+    // Cleanup drag listeners
+    if (dragCleanupFns && dragCleanupFns.length) {
+      try {
+        dragCleanupFns.forEach((fn) => {
+          try { fn(); } catch (_) {}
+        });
+      } finally {
+        dragCleanupFns = [];
+      }
+    }
   }
 
   // Start auto-close timer
